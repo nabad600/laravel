@@ -1,0 +1,59 @@
+ARG BACK_END
+FROM ghcr.io/nabad600/aubuntu:v8.2
+LABEL maintainer Naba Das <hello@get-deck.com>
+
+ARG LARAVEL_VERSION
+RUN apt install -y wget php7.4-dom
+RUN mkdir -p /app
+RUN mkdir -p /var/preview
+COPY uhttpd.conf /app/000-default.conf
+COPY apache2.conf /app/apache2.conf
+COPY uhttpd.conf /etc/apache2/sites-available/000-default.conf
+COPY apache2.conf /etc/apache2/apache2.conf
+RUN wget -O /var/preview/index.html https://raw.githubusercontent.com/deck-app/stack-preview-screen/main/install/index.html
+
+ARG SERVER_ROOT
+RUN sed -i "s#{SERVER_ROOT}#/var/preview#g" /etc/apache2/sites-available/000-default.conf
+RUN sed -i "s#{SERVER_ROOT}#/var/preview#g" /etc/apache2/apache2.conf
+RUN sed -i "s#{SERVER_ROOT}#/var/www/public#g" /app/000-default.conf
+RUN sed -i "s#{SERVER_ROOT}#/var/www/public#g" /app/apache2.conf
+
+
+# Persistent runtime dependencies
+# Example RUN apt install -y php7.4-openssl php7.4-sysvmsg php7.4-curl
+
+WORKDIR /var/www
+ARG PHP_VERSION
+COPY php.ini /etc/php/${PHP_VERSION}/php.ini
+ARG DISPLAY_PHPERROR
+RUN if [ ${DISPLAY_PHPERROR} = true ]; then \
+sed -i "s#{DISPLAY}#On#g" /etc/php/${PHP_VERSION}/php.ini \
+;else \
+sed -i "s#{DISPLAY}#Off#g" /etc/php/${PHP_VERSION}/php.ini \
+;fi
+#Xdebug enable or disable
+ARG XDEBUG
+RUN if [ ${XDEBUG} = true ]; then \
+apk add php${PHP_VERSION}-xdebug \
+;fi
+
+ARG LARAVEL_VERSION
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN sed -i "s#{LARAVEL_VERSION}#${LARAVEL_VERSION}#g" /docker-entrypoint.sh
+
+RUN chown -R www-data:www-data /var/preview
+## Linux permission issue
+ARG USER_ID
+ARG GROUP_ID
+# RUN usermod -u ${USER_ID} nobody && groupmod -g ${GROUP_ID} nobody
+
+RUN sed -i "s#{USER_ID}#${USER_ID}#g" /docker-entrypoint.sh
+RUN sed -i "s#{GROUP_ID}#${GROUP_ID}#g" /docker-entrypoint.sh
+RUN sed -i "s#{OS_TYPE}#${OS_TYPE}#g" /docker-entrypoint.sh
+RUN sed -i "s#{BACK_END}#${BACK_END}#g" /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+USER www-data
+
+CMD /docker-entrypoint.sh & /start.sh
+
+
