@@ -39,7 +39,7 @@ else
 fi
 
 sudo cp /app/default.conf /etc/nginx/conf.d/default.conf
-if [[ ${OS_TYPE} = alpine ]] ;
+if [[ {OS_TYPE} = alpine ]] ;
 then 
     nginx -s reload
     sudo chown -R nobody:nobody /var/www 2> /dev/null

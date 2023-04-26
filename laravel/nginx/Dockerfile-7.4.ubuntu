@@ -33,8 +33,12 @@ sed -i "s#{DISPLAY}#Off#g" /etc/php/${PHP_VERSION}/php.ini \
 ;fi
 
 ARG LARAVEL_VERSION
+ARG OS_TYPE
+ADD package.sh /package.sh
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN sed -i "s#{LARAVEL_VERSION}#${LARAVEL_VERSION}#g" /docker-entrypoint.sh
+RUN sed -i "s#{OS_TYPE}#${OS_TYPE}#g" /docker-entrypoint.sh
+RUN sed -i "s#{OS_TYPE}#${OS_TYPE}#g" /package.sh
 RUN chmod +x /docker-entrypoint.sh
 
 ## Linux permission issue
@@ -53,5 +57,15 @@ RUN sed -i "s#{USER_ID}#${USER_ID}#g" /docker-entrypoint.sh
 RUN sed -i "s#{GROUP_ID}#${GROUP_ID}#g" /docker-entrypoint.sh
 RUN sed -i "s#{OS_TYPE}#${OS_TYPE}#g" /docker-entrypoint.sh
 RUN sed -i "s#{BACK_END}#${BACK_END}#g" /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 USER www-data
+ARG INSTALL_ADDITIONAL_EXTENSIONS
+ENV INSTALL_ADDITIONAL_EXTENSIONS=$INSTALL_ADDITIONAL_EXTENSIONS
+ENV PHP_VERSION=$PHP_VERSION
+RUN if [ -z "$INSTALL_ADDITIONAL_EXTENSIONS" ] ; then \
+echo "No additional PHP extensions added" \
+;else \
+bash /package.sh \
+;fi
 CMD /docker-entrypoint.sh & /entrypoint.sh

@@ -38,7 +38,7 @@ else
     echo ".env file exit"
 fi
 
-if [[ ${OS_TYPE} = alpine ]] ;
+if [[ {OS_TYPE} = alpine ]] ;
 then 
     sudo cp /app/httpd.conf /etc/apache2/httpd.conf
     httpd -k graceful
